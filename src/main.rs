@@ -3,11 +3,12 @@ use std::str::FromStr;
 use binary_install::Cache;
 use clap::{App, Arg, SubCommand};
 use commands::HTTPMethod;
-use settings::Settings;
 
 mod commands;
 mod install;
-mod settings;
+mod user;
+
+use user::User;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::init();
@@ -108,7 +109,7 @@ fn main() -> Result<(), failure::Error> {
             commands::build(&cache)?;
         }
     } else {
-        let settings = Settings::new()
+        let user = User::new()
             .expect("🚧 Whoops! You aren't configured yet. Run `wrangler config`! 🚧");
 
         if let Some(matches) = matches.subcommand_matches("publish") {
@@ -117,11 +118,11 @@ fn main() -> Result<(), failure::Error> {
                 .expect("A zone ID must be provided.");
 
             commands::build(&cache)?;
-            commands::publish(zone_id, settings.clone())?;
+            commands::publish(zone_id, &user)?;
         }
 
         if matches.subcommand_matches("whoami").is_some() {
-            commands::whoami(settings)?;
+            commands::whoami(&user);
         }
     }
     Ok(())

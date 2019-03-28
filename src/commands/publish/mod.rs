@@ -4,17 +4,47 @@ pub mod preview;
 use std::fs;
 use std::path::Path;
 
-use crate::settings::Settings;
+use crate::user::User;
 
 use reqwest::multipart::Form;
 
-pub fn publish(zone_id: &str, settings: Settings) -> Result<(), failure::Error> {
+pub fn publish(zone_id: &str, user: &User) -> Result<(), failure::Error> {
+    if user.account.multiscript {
+        multi_script(zone_id, &user, "farts")?;
+    } else {
+        single_script(zone_id, &user)?;
+    }
+    Ok(())
+}
+
+fn single_script(zone_id: &str, user: &User) -> Result<(), failure::Error> {
     let worker_addr = format!(
         "https://api.cloudflare.com/client/v4/zones/{}/workers/script",
         zone_id
     );
 
     let client = reqwest::Client::new();
+    let settings = user.settings.clone();
+
+    client
+        .put(&worker_addr)
+        .header("X-Auth-Key", settings.api_key)
+        .header("X-Auth-Email", settings.email)
+        .multipart(build_form()?)
+        .send()?;
+
+    println!("✨ Success! Your worker was successfully published. ✨",);
+    Ok(())
+}
+
+fn multi_script(zone_id: &str, user: &User, name: &str) -> Result<(), failure::Error> {
+    let worker_addr = format!(
+        "https://api.cloudflare.com/client/v4/zones/{}/workers/scripts/{}",
+        zone_id, name,
+    );
+
+    let client = reqwest::Client::new();
+    let settings = user.settings.clone();
 
     client
         .put(&worker_addr)

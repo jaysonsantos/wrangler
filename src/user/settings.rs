@@ -22,6 +22,8 @@ impl Settings {
         // Eg.. `CF_ACCOUNT_AUTH_KEY=farts` would set the `account_auth_key` key
         s.merge(Environment::with_prefix("CF"))?;
 
+        println!("settings is a success OK");
+
         Ok(s.try_into()?)
     }
 }
